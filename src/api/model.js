@@ -14,6 +14,8 @@ const MAX_STOPS = 5000;
 /** A departure whose time is this much behind "now" has left. */
 const GONE_AFTER_MS = 60 * 1000;
 const CODE = /^[A-Za-z0-9]{1,12}$/;
+/** How far the time of an answer may be from the server clock. */
+export const MAX_SKEW_MS = 10 * 60 * 1000;
 
 const str = (value) => (typeof value === 'string' ? value : '');
 
@@ -23,7 +25,13 @@ const str = (value) => (typeof value === 'string' ? value : '');
  */
 export function serverNowOf(data, serverDate, wallNow) {
   const stamp = parseTorontoTime(str(data?.Metadata?.TimeStamp));
-  if (stamp !== null) return { at: stamp, source: 'api' };
+  if (stamp !== null) {
+    // A snapshot far from the clock of the answer (the Date header, else the
+    // host) is an old one served again: neither published nor fired.
+    const reference = Number.isFinite(serverDate) ? serverDate : wallNow;
+    const stale = Number.isFinite(reference) && Math.abs(stamp - reference) > MAX_SKEW_MS;
+    return { at: stamp, source: 'api', ...(stale ? { stale: true } : {}) };
+  }
   if (Number.isFinite(serverDate)) return { at: serverDate, source: 'header' };
   return { at: wallNow, source: 'host' };
 }

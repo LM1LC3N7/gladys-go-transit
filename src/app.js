@@ -37,6 +37,7 @@ import {
   MINUTE,
   PAUSE_MAX_MS,
   PAUSE_MIN_MS,
+  SEARCH_MIN_GAP_MS,
   STOP_LIST_TTL_MS,
   STORE_RETRY_MS,
   TEST_MIN_GAP_MS,
@@ -62,6 +63,7 @@ import {
   discoveredDevices,
   stopIds,
   stopName,
+  staleStates,
   stopStates,
   watchedAlerts,
 } from './devices.js';
@@ -122,6 +124,7 @@ export class GoApp {
     this.kindResult = {};
     this.jobResult = new Map();
     this.lastTest = -Infinity;
+    this.lastSearch = -Infinity;
     this.states = [];
     this.boards = new Map();
     this.refusedKey = null;
@@ -195,6 +198,12 @@ export class GoApp {
       this.logger.warn(`Devices not published (${err?.name ?? 'Error'})`);
     }
     if (gen !== this.gen) return;
+    // Values Gladys still shows from before this start blank out too if no
+    // reading comes within the age limit.
+    const mono = this.monotonic();
+    for (const stop of this.config.stops) {
+      if (!this.boards.has(stop.id)) this.boards.set(stop.id, { departures: null, mono });
+    }
     await this.reportStatus();
     if (gen !== this.gen) return;
     this.schedule();
@@ -274,7 +283,10 @@ export class GoApp {
     if (Array.isArray(data.calls)) {
       for (const t of data.calls.slice(-MAX_CALLS_PER_HOUR)) {
         const age = ago(t);
-        if (age !== undefined && age < HOUR) this.calls.push(mono - age);
+        // A date ahead of the host clock (a host without a battery clock)
+        // counts as a call made now: the budget is never forgotten.
+        if (Number.isFinite(t) && t > wall) this.calls.push(mono);
+        else if (age !== undefined && age < HOUR) this.calls.push(mono - age);
       }
     }
     if (Number.isFinite(data.pauseUntil) && Number.isFinite(data.pauseLevel)) {
@@ -395,6 +407,7 @@ export class GoApp {
         throw err;
       }
       this.calls.push(mono);
+      this.save();
       const key = this.config.apiKey;
       const result = await apiGet({
         path,
@@ -487,13 +500,41 @@ export class GoApp {
     return at;
   }
 
+  /** How old a board may grow before its values are blanked (and the widget shows nothing). */
+  boardMaxAge() {
+    return Math.max(BOARD_MAX_AGE_MS, 2 * (this.config?.departuresInterval ?? 60) * 1000);
+  }
+
+  /** When the oldest board still shown goes past its age, or undefined. */
+  nextExpiry() {
+    let next;
+    for (const stop of this.config?.stops ?? []) {
+      const board = this.boards.get(stop.id);
+      if (!board || board.cleared) continue;
+      const at = board.mono + this.boardMaxAge();
+      if (next === undefined || at < next) next = at;
+    }
+    return next;
+  }
+
+  /** Whether reads may be planned at all (else only the expiry of the boards). */
+  readable() {
+    return this.running && this.loaded && Boolean(this.config?.apiKey) && !this.isRefused();
+  }
+
   schedule() {
     this.clearTimer();
-    if (!this.running || !this.loaded || !this.config?.apiKey || this.isRefused()) return;
+    if (!this.running) return;
     const mono = this.monotonic();
-    const jobs = this.jobs();
-    if (jobs.length === 0) return;
-    const next = Math.min(...jobs.map((job) => this.dueAt(job, mono)));
+    const candidates = [];
+    if (this.readable()) {
+      const jobs = this.jobs();
+      if (jobs.length > 0) candidates.push(Math.min(...jobs.map((job) => this.dueAt(job, mono))));
+    }
+    const expiry = this.nextExpiry();
+    if (expiry !== undefined) candidates.push(expiry);
+    if (candidates.length === 0) return;
+    const next = Math.min(...candidates);
     const gen = this.gen;
     this.timer = this.timers.setTimeout(
       () => {
@@ -505,16 +546,56 @@ export class GoApp {
     );
   }
 
-  /** Reads every due source, one after the other; then the next timer. */
-  async tick() {
-    if (this.ticking) {
-      this.again = true;
-      return this.ticking;
+  /**
+   * A stop not read for too long: its countdowns would be frozen, so they go
+   * to 999 and the texts say there is no recent reading.
+   */
+  async expireBoards(gen) {
+    const mono = this.monotonic();
+    for (const stop of this.config?.stops ?? []) {
+      const board = this.boards.get(stop.id);
+      if (!board || board.cleared || mono - board.mono < this.boardMaxAge()) continue;
+      board.cleared = true;
+      if (
+        !(this.gladys.devices ?? []).some(
+          (d) => d.external_id === stopIds(this.gladys, stop).device,
+        )
+      ) {
+        continue;
+      }
+      try {
+        await this.publish(staleStates(this.gladys, stop, this.config));
+      } catch (err) {
+        this.logger.warn(`Stale values of ${stop.id} not published (${err?.name ?? 'Error'})`);
+      }
+      if (gen !== this.gen) return;
     }
+  }
+
+  /**
+   * Reads every due source, one after the other; then the next timer. A tick
+   * of a new generation (config saved, reconnection) waits for the one of the
+   * old generation still out, then runs: the reads never stop.
+   */
+  async tick() {
     const gen = this.gen;
-    this.ticking = (async () => {
+    if (this.ticking) {
+      if (this.ticking.gen === gen) {
+        this.again = true;
+        return this.ticking.promise;
+      }
+      await this.ticking.promise.catch(() => {});
+      if (gen !== this.gen) return;
+      if (this.ticking) {
+        this.again = true;
+        return this.ticking.promise;
+      }
+    }
+    const promise = (async () => {
       do {
         this.again = false;
+        await this.expireBoards(gen);
+        if (gen !== this.gen) return;
         const mono = this.monotonic();
         const due = this.jobs().filter((job) => this.dueAt(job, mono) <= mono);
         for (const job of due) {
@@ -523,14 +604,19 @@ export class GoApp {
         }
       } while (this.again && gen === this.gen);
     })();
+    const entry = { gen, promise };
+    this.ticking = entry;
     try {
-      await this.ticking;
+      await promise;
     } finally {
-      this.ticking = null;
+      if (this.ticking === entry) this.ticking = null;
     }
     if (gen !== this.gen) return;
-    await this.reportStatus();
-    if (gen === this.gen) this.schedule();
+    try {
+      await this.reportStatus();
+    } finally {
+      if (gen === this.gen) this.schedule();
+    }
   }
 
   async runJob(job, gen) {
@@ -553,7 +639,8 @@ export class GoApp {
         return;
       }
       if (gen !== this.gen) return;
-      this.jobResult.set(job.key, err.kind === 'notfound' ? 'unknown' : 'error');
+      const unknown = err.kind === 'notfound' && job.kind === KINDS.DEPARTURES;
+      this.jobResult.set(job.key, unknown ? 'unknown' : 'error');
       if (err.kind === 'notfound') this.retryAfter.set(job.key, UNKNOWN_STOP_RETRY_MS);
       this.logger.warn(`Read of ${job.key} failed (${err.kind}${err.code ? ` ${err.code}` : ''})`);
       this.failed(err, job.kind, this.config?.apiKey);
@@ -569,7 +656,10 @@ export class GoApp {
       this.save();
     } catch (err) {
       if (gen !== this.gen) return;
-      if (err instanceof GoApiError) {
+      if (err instanceof GoApiError && err.kind === 'stale') {
+        this.jobResult.set(job.key, 'stale');
+        this.logger.warn(`Answer for ${job.key} out of date: not used`);
+      } else if (err instanceof GoApiError) {
         this.jobResult.set(job.key, 'error');
         this.logger.warn(`Answer for ${job.key} not usable (${err.kind})`);
         this.failed(err, job.kind, result.key);
@@ -595,8 +685,17 @@ export class GoApp {
     await this.gladys.publishChangedStates(states);
   }
 
-  async handleBoard(stop, result, gen) {
+  /** The time of an answer; a snapshot far from the clock of the server is not used. */
+  answerTime(result) {
     const server = serverNowOf(result.data, result.serverDate, this.now());
+    if (server.stale) {
+      throw new GoApiError('stale', 'answer time far from the server clock');
+    }
+    return server;
+  }
+
+  async handleBoard(stop, result, gen) {
+    const server = this.answerTime(result);
     const board = parseBoard(result.data, { now: server.at, lines: stop.lines });
     const mono = this.monotonic();
     this.boards.set(stop.id, { departures: board, at: server.at, mono });
@@ -653,6 +752,7 @@ export class GoApp {
   }
 
   async handleAlerts(result, gen) {
+    this.answerTime(result);
     const all = parseAlerts(result.data);
     const watched = watchedAlerts(all, this.config.alertLines);
     await this.publish(alertsStates(this.gladys, watched, this.config));
@@ -661,12 +761,17 @@ export class GoApp {
     const fresh = watched.filter((alert) => !seen.has(alert.code));
     // The first reading ever only learns what is already there: a new user
     // does not get every current alert as a scene event.
+    const unsent = new Set();
     if (this.persist.alertsSeeded) {
       let sent = 0;
       for (const alert of fresh) {
         const lines = alert.lines.length > 0 ? alert.lines.slice(0, 5) : [''];
+        if (sent + lines.length > 20 || gen !== this.gen) {
+          // Kept for the next reading rather than lost.
+          unsent.add(alert.code);
+          continue;
+        }
         for (const line of lines) {
-          if (sent >= 20 || gen !== this.gen) break;
           sent += 1;
           await this.gladys
             .publishSceneEvent(TRIGGERS.ALERT, {
@@ -681,7 +786,7 @@ export class GoApp {
       }
     }
     for (const alert of all) {
-      if (!seen.has(alert.code)) {
+      if (!seen.has(alert.code) && !unsent.has(alert.code)) {
         seen.add(alert.code);
         this.persist.seenAlerts.push(alert.code);
       }
@@ -710,12 +815,17 @@ export class GoApp {
     const jobs = this.jobs();
     const unknown = jobs.filter((job) => this.jobResult.get(job.key) === 'unknown');
     if (unknown.length > 0) {
-      notes = join(notes, MESSAGES.unknownStops(unknown.map((job) => job.stop.code).join(', ')));
+      // Never a throw here: a status that fails would stop the timer.
+      const names = unknown.map((job) => job.stop?.code ?? job.key);
+      notes = join(notes, MESSAGES.unknownStops(names.join(', ')));
     }
     for (const kind of Object.values(KINDS)) {
       if (this.denied[kind] && jobs.some((job) => job.kind === kind)) {
         notes = join(notes, MESSAGES.deniedEndpoint(MESSAGES.endpointNames[kind]));
       }
+    }
+    if (jobs.some((job) => this.jobResult.get(job.key) === 'stale')) {
+      notes = join(notes, MESSAGES.staleData);
     }
     if (mono < this.pauseUntil) {
       const minutes = Math.max(1, Math.ceil((this.pauseUntil - mono) / MINUTE));
@@ -814,6 +924,19 @@ export class GoApp {
     const fresh = cached && wall >= cached.at && wall - cached.at < STOP_LIST_TTL_MS;
     let stops = fresh ? cached.stops : null;
     if (!stops) {
+      // The list is read at most every 30 s, whatever the clicks: a search
+      // that fails must not eat the hourly budget of the reads.
+      const mono = this.monotonic();
+      if (mono - this.lastSearch < SEARCH_MIN_GAP_MS) {
+        if (cached) stops = cached.stops;
+        else {
+          return MESSAGES.testTooSoon(
+            Math.ceil((SEARCH_MIN_GAP_MS - (mono - this.lastSearch)) / 1000),
+          );
+        }
+      } else this.lastSearch = mono;
+    }
+    if (!stops) {
       try {
         const result = await this.call(ENDPOINTS.stops(), { maxBytes: MAX_STOPS_BODY_BYTES });
         stops = parseStopList(result.data);
@@ -860,7 +983,7 @@ export class GoApp {
     const board = this.boards.get(stop.id);
     const mono = this.monotonic();
     const title = { type: 'text', variant: 'heading', text: stopName(stop, lang).slice(0, 40) };
-    if (!board || mono - board.mono > BOARD_MAX_AGE_MS) {
+    if (!board || !board.departures || mono - board.mono > this.boardMaxAge()) {
       return {
         ttl_seconds: 60,
         components: [

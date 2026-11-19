@@ -15,6 +15,7 @@ export const LABELS = {
     noAlert: 'No alert',
     stop: 'GO',
     none: 'No upcoming departure',
+    noReading: 'No recent reading',
     onTime: 'On time',
     late: (m) => `+${m} min`,
     early: (m) => `${m} min early`,
@@ -33,6 +34,7 @@ export const LABELS = {
     noAlert: 'Aucune alerte',
     stop: 'GO',
     none: 'Aucun départ à venir',
+    noReading: 'Aucune lecture récente',
     onTime: "À l'heure",
     late: (m) => `+${m} min`,
     early: (m) => `${m} min d'avance`,
@@ -68,6 +70,10 @@ export const MESSAGES = {
     en: `GO API unavailable or busy: calls paused for ${minutes} min.`,
     fr: `API GO indisponible ou saturée : appels en pause pendant ${minutes} min.`,
   }),
+  staleData: {
+    en: ' The GO API served an out-of-date snapshot: not used.',
+    fr: ' L’API GO a servi un instantané périmé : non utilisé.',
+  },
   budget: {
     en: 'Hourly call limit of the integration reached: the reads resume within the hour.',
     fr: 'Plafond horaire d’appels de l’intégration atteint : les lectures reprennent dans l’heure.',

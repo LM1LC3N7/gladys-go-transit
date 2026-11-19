@@ -84,12 +84,6 @@
     "to": ""
   },
   {
-    "name": "attempt not saved before the call",
-    "file": "src/app.js",
-    "from": "    this.lastAttempt.set(job.key, mono);\n    this.retryAfter.delete(job.key);\n    this.save();\n",
-    "to": "    this.lastAttempt.set(job.key, mono);\n    this.retryAfter.delete(job.key);\n"
-  },
-  {
     "name": "restored calls not counted",
     "file": "src/app.js",
     "from": "if (age !== undefined && age < HOUR) this.calls.push(mono - age);",
@@ -178,5 +172,167 @@
     "file": "src/api/model.js",
     "from": "computed !== null && scheduled !== null\n          ? Math.round",
     "to": "scheduled !== null\n          ? Math.round"
+  },
+  {
+    "name": "r1-I1 old tick reused by a new generation",
+    "file": "src/app.js",
+    "from": "      if (this.ticking.gen === gen) {",
+    "to": "      if (true) {"
+  },
+  {
+    "name": "r1-I1 no schedule after the status",
+    "file": "src/app.js",
+    "from": "      if (gen === this.gen) this.schedule();\n    }\n  }",
+    "to": "    }\n  }"
+  },
+  {
+    "name": "r1-I2 alerts 404 named as a stop",
+    "file": "src/app.js",
+    "from": "const unknown = err.kind === 'notfound' && job.kind === KINDS.DEPARTURES;",
+    "to": "const unknown = err.kind === 'notfound';"
+  },
+  {
+    "name": "r1-I3 stale snapshot used",
+    "file": "src/app.js",
+    "from": "    if (server.stale) {",
+    "to": "    if (false) {"
+  },
+  {
+    "name": "r1-I3 skew not measured",
+    "file": "src/api/model.js",
+    "from": "Math.abs(stamp - reference) > MAX_SKEW_MS",
+    "to": "false"
+  },
+  {
+    "name": "r1-I4 boards never expire",
+    "file": "src/app.js",
+    "from": "      if (!board || board.cleared || mono - board.mono < this.boardMaxAge()) continue;",
+    "to": "      continue;"
+  },
+  {
+    "name": "r1-I4 expiry not scheduled",
+    "file": "src/app.js",
+    "from": "    if (expiry !== undefined) candidates.push(expiry);",
+    "to": ""
+  },
+  {
+    "name": "r1-I4 no placeholder at start",
+    "file": "src/app.js",
+    "from": "      if (!this.boards.has(stop.id)) this.boards.set(stop.id, { departures: null, mono });",
+    "to": ""
+  },
+  {
+    "name": "r1-m1 future call dates dropped",
+    "file": "src/app.js",
+    "from": "        if (Number.isFinite(t) && t > wall) this.calls.push(mono);",
+    "to": "        if (false) this.calls.push(mono);"
+  },
+  {
+    "name": "r1-m2 search not spaced",
+    "file": "src/app.js",
+    "from": "      if (mono - this.lastSearch < SEARCH_MIN_GAP_MS) {",
+    "to": "      if (false) {"
+  },
+  {
+    "name": "r1-m3 call not saved with the call",
+    "file": "src/app.js",
+    "from": "      this.calls.push(mono);\n      this.save();",
+    "to": "      this.calls.push(mono);"
+  },
+  {
+    "name": "r1-m6 unsent alerts marked seen",
+    "file": "src/app.js",
+    "from": "!seen.has(alert.code) && !unsent.has(alert.code)",
+    "to": "!seen.has(alert.code)"
+  },
+  {
+    "name": "r1-m7 widget age 15 min only",
+    "file": "src/app.js",
+    "from": "    return Math.max(BOARD_MAX_AGE_MS, 2 * (this.config?.departuresInterval ?? 60) * 1000);",
+    "to": "    return BOARD_MAX_AGE_MS;"
+  },
+  {
+    "name": "rev4 accept keeps denied",
+    "file": "src/app.js",
+    "from": "    delete this.denied[kind];\n    this.pauseLevel = 0;",
+    "to": "    this.pauseLevel = 0;"
+  },
+  {
+    "name": "rev5 old refusal covers the new key",
+    "file": "src/app.js",
+    "from": "      if (previousKey && this.isRefused(previousKey)) this.refusedKey = previousKey;",
+    "to": ""
+  },
+  {
+    "name": "rev6 Retry-After not capped",
+    "file": "src/app.js",
+    "from": "const wait = Math.min(PAUSE_MAX_MS, Math.max(ladder, err.retryAfterMs ?? 0));",
+    "to": "const wait = Math.max(ladder, err.retryAfterMs ?? 0);"
+  },
+  {
+    "name": "rev7 budget not in dueAt",
+    "file": "src/app.js",
+    "from": "    if (this.calls.length >= MAX_CALLS_PER_HOUR) at = Math.max(at, this.calls[0] + HOUR);",
+    "to": ""
+  },
+  {
+    "name": "rev8 restored pause not capped",
+    "file": "src/app.js",
+    "from": "this.pauseUntil = mono + Math.min(left, PAUSE_MAX_MS);",
+    "to": "this.pauseUntil = mono + left;"
+  },
+  {
+    "name": "rev9 threshold strict",
+    "file": "src/app.js",
+    "from": "          if (d.delay >= t)",
+    "to": "          if (d.delay > t)"
+  },
+  {
+    "name": "rev15 lines per alert not capped",
+    "file": "src/app.js",
+    "from": "alert.lines.slice(0, 5)",
+    "to": "alert.lines"
+  },
+  {
+    "name": "rev18 widget rows not capped",
+    "file": "src/app.js",
+    "from": ".filter((d) => d.time >= now - MINUTE).slice(0, 6)",
+    "to": ".filter((d) => d.time >= now - MINUTE)"
+  },
+  {
+    "name": "rev22 blocked read counted as read",
+    "file": "src/app.js",
+    "from": "        this.lastAttempt.delete(job.key);\n",
+    "to": ""
+  },
+  {
+    "name": "rev23 stop keeps the generation",
+    "file": "src/app.js",
+    "from": "  async stop() {\n    this.gen += 1;",
+    "to": "  async stop() {"
+  },
+  {
+    "name": "rev24 stop keeps the config timer",
+    "file": "src/app.js",
+    "from": "    this.clearTimer();\n    this.clearConfigTimer();\n    if (this.storeTimer)",
+    "to": "    this.clearTimer();\n    if (this.storeTimer)"
+  },
+  {
+    "name": "rev25 stop does not save",
+    "file": "src/app.js",
+    "from": "      await this.store.save(this.serialize()).catch(() => {});\n",
+    "to": ""
+  },
+  {
+    "name": "rev32 trip undefined",
+    "file": "src/app.js",
+    "from": "trip: d.trip || null,",
+    "to": "trip: d.trip || undefined,"
+  },
+  {
+    "name": "rev33 delay events not capped",
+    "file": "src/app.js",
+    "from": "      if (sent >= 20 || gen !== this.gen) break;",
+    "to": "      if (gen !== this.gen) break;"
   }
 ]

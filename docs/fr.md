@@ -24,7 +24,8 @@ et les alertes de service du réseau, depuis l’API GO officielle de Metrolinx.
   jamais écrite dans les journaux, le statut ni les fichiers de l’intégration.
 - **Gares et arrêts** : les codes GO, séparés par des virgules, 6 au plus : `UN` pour Union
   Station, `OA` pour Oakville… Le bouton **Chercher une gare** en bas de la page donne les codes (il
-  lit la liste des gares une fois, puis la garde une semaine). Après le code, un filtre de lignes
+  lit la liste des gares une fois, puis la garde une semaine ; au plus une lecture toutes les
+  30 s). Après le code, un filtre de lignes
   facultatif (`@LW`, plusieurs joints par `+` : `@LW+LE`) et un nom (`:Oakville vers le travail`) :
   `UN, OA@LW:Oakville vers le travail`.
 - **Suivre les alertes de service** : propose l’appareil des alertes. **Lignes des alertes** :
@@ -52,7 +53,14 @@ L’appareil des **alertes** : **Alertes en cours** (nombre, des lignes suivies)
 alerte** (son objet).
 
 Le widget **Départs GO** du tableau de bord montre le tableau d’une gare, décompté depuis la
-dernière lecture ; un tableau de plus de 15 minutes n’est pas montré.
+dernière lecture.
+
+Quand une gare n’a pas été lue depuis 15 minutes (ou deux fois son intervalle de rafraîchissement,
+s’il est plus long), ses comptes à rebours passent à 999, ses textes sont vidés et **Prochains
+départs** indique `Aucune lecture récente` ; le widget n’affiche rien non plus. C’est aussi le cas
+après un redémarrage qui ne peut pas lire (pause, clé refusée). Une réponse dont l’heure propre
+s’écarte de plus de 10 minutes de l’horloge du serveur (ou de l’hôte) est un vieil instantané : ni
+publiée ni utilisée pour les scènes, et le statut le dit.
 
 ### Scènes
 

@@ -30,6 +30,17 @@
   (5 at most), the first reading ever only learns the current alerts.
 - No scene action in v1.
 
+## Left from review r1 (minor)
+
+- Night of the change to winter time (1 November): an ambiguous local time (01:00-01:59) is read as
+  the first one (summer time); a departure in the second hour may be off by 60 min. The `Date` header
+  could settle it. Rare (night departures).
+- An alert whose lines change later under the same code does not fire again.
+- A successful stop search counts as "the key reads something": a key switched off later in the
+  same session gets "no access" (spaced up to 1 h) rather than "refused". Bounded, documented.
+- The key travels in the query string, as the API requires (HTTPS only, no redirect, never in a
+  message, log, status, /data or state). Accepted by the review.
+
 ## Not verified
 
 - Never run against the real API with a key (registration is manual, up to ten business days):

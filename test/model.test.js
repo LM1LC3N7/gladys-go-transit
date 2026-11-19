@@ -48,7 +48,7 @@ test('Toronto local times, winter and summer, DST changes, invalid dates', () =>
 });
 
 test('the time of an answer: the API clock, else the Date header, else the host', () => {
-  assert.deepEqual(serverNowOf({ Metadata: { TimeStamp: toronto(START) } }, null, 1), {
+  assert.deepEqual(serverNowOf({ Metadata: { TimeStamp: toronto(START) } }, null, START), {
     at: START,
     source: 'api',
   });

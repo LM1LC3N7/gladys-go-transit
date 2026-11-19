@@ -23,7 +23,7 @@ the service alerts of the network, from the official GO API of Metrolinx.
   logs, the status or the integration files.
 - **Stations and stops**: the GO stop codes, comma-separated, 6 at most: `UN` for Union Station,
   `OA` for Oakville… The **Find a stop** button at the bottom of the page gives the codes (it reads
-  the list of stops once, then keeps it a week). After the code, an optional line filter (`@LW`,
+  the list of stops once, then keeps it a week; at most one read every 30 s). After the code, an optional line filter (`@LW`,
   several joined by `+`: `@LW+LE`) and a name (`:Oakville to work`):
   `UN, OA@LW:Oakville to work`.
 - **Watch the service alerts**: proposes the alerts device. **Lines of the alerts**: only the
@@ -51,7 +51,13 @@ The **alerts** device: **Active alerts** (number, of the watched lines) and **La
 subject).
 
 The **GO departures** dashboard widget shows the board of a station, counted down from the last
-reading; a board older than 15 minutes is not shown.
+reading.
+
+When a station has not been read for 15 minutes (or twice its refresh interval, when longer), its
+countdowns go to 999, its texts are emptied and **Next departures** says `No recent reading`; the
+widget shows nothing either. This also applies after a restart that cannot read (pause, refused
+key). An answer whose own time is more than 10 minutes away from the clock of the server (or of
+the host) is an old snapshot: neither published nor used for the scenes, and the status says so.
 
 ### Scenes
 

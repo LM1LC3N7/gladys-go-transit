@@ -181,6 +181,25 @@ export function stopStates(gladys, stop, board, now, config) {
   return states;
 }
 
+/** A stop not read for too long: no countdown left, the summary says why. */
+export function staleStates(gladys, stop, config) {
+  const ids = stopIds(gladys, stop);
+  const states = [];
+  for (let n = 1; n <= config.maxDepartures; n += 1) {
+    states.push({
+      device_feature_external_id: ids.feature(featureKeys.departure(n)),
+      state: NO_DEPARTURE_MINUTES,
+    });
+    states.push({ device_feature_external_id: ids.feature(featureKeys.line(n)), text: '' });
+    states.push({ device_feature_external_id: ids.feature(featureKeys.status(n)), text: '' });
+  }
+  states.push({
+    device_feature_external_id: ids.feature(featureKeys.summary),
+    text: LABELS[config.language].noReading,
+  });
+  return states;
+}
+
 /** The alerts of the watched lines (every alert when no line is chosen). */
 export function watchedAlerts(alerts, lines) {
   if (lines.length === 0) return alerts;

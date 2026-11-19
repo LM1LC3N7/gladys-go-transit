@@ -43,6 +43,9 @@ export const UNKNOWN_STOP_RETRY_MS = 30 * MINUTE;
 /** The test button: once a minute at most, whatever the clicks. */
 export const TEST_MIN_GAP_MS = MINUTE;
 
+/** The search button reads the list of stops at most every 30 s. */
+export const SEARCH_MIN_GAP_MS = 30 * SECOND;
+
 /** The list of stops (for the search button) is kept a week. */
 export const STOP_LIST_TTL_MS = 7 * 24 * HOUR;
 
@@ -57,7 +60,10 @@ export const CONFIG_RETRY_MAX_MS = 5 * MINUTE;
 /** States published per rolling minute, all devices together (Gladys allows 300). */
 export const MAX_STATES_PER_MINUTE = 250;
 
-/** A board older than this is not shown by the widget nor used by a trigger. */
+/**
+ * A board older than this (or twice the departures interval when longer) is
+ * blanked: 999 and "no recent reading", in the states and the widget.
+ */
 export const BOARD_MAX_AGE_MS = 15 * MINUTE;
 
 /** Stops watched at most (each one costs a call per interval). */

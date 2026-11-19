@@ -146,7 +146,6 @@ export const json = (body, status = 200, headers = {}) =>
     status,
     headers: {
       'content-type': 'application/json',
-      date: new Date(START).toUTCString(),
       ...headers,
     },
   });
@@ -174,7 +173,7 @@ export function createApi(clock, routes) {
     }
     if (answer instanceof Response) return answer;
     if (answer === undefined) return new Response('not found', { status: 404 });
-    return json(answer);
+    return json(answer, 200, { date: new Date(clock.now).toUTCString() });
   };
   api.count = (part) => api.calls.filter((c) => c.path.includes(part)).length;
   return api;
