@@ -6,6 +6,8 @@ uses [semantic versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-19
+
 ### Added
 
 - First version: next departures of up to 6 GO Transit stations (minutes to wait, line, delay or
@@ -16,3 +18,6 @@ uses [semantic versioning](https://semver.org/).
 - Limits kept for the key: one call at a time, 450 calls per hour, pause on 429/5xx/timeout,
   refusal kept without the key.
 - `countries: ["CA"]` in the manifest (requires Gladys 5.3.0 or later).
+
+[Unreleased]: https://github.com/LM1LC3N7/gladys-go-transit/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/LM1LC3N7/gladys-go-transit/releases/tag/v0.1.1

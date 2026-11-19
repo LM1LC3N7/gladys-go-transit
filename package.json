@@ -1,6 +1,6 @@
 {
   "name": "gladys-go-transit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Gladys Assistant external integration for GO Transit (Toronto region): next departures, delays and service alerts from the Metrolinx GO API. Not affiliated with Metrolinx.",
   "type": "module",
