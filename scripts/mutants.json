@@ -1,0 +1,182 @@
+[
+  {
+    "name": "refusal not checked",
+    "file": "src/app.js",
+    "from": "if (!test && this.isRefused()) return 'refused';",
+    "to": "if (false) return 'refused';"
+  },
+  {
+    "name": "pause not checked at the gate",
+    "file": "src/app.js",
+    "from": "if (mono < this.pauseUntil) return 'paused';",
+    "to": "if (false) return 'paused';"
+  },
+  {
+    "name": "budget not checked",
+    "file": "src/app.js",
+    "from": "if (this.calls.length >= MAX_CALLS_PER_HOUR) return 'budget';",
+    "to": "if (false) return 'budget';"
+  },
+  {
+    "name": "/data unread not checked",
+    "file": "src/app.js",
+    "from": "if (!this.loaded) return 'data';",
+    "to": "if (false) return 'data';"
+  },
+  {
+    "name": "call not counted",
+    "file": "src/app.js",
+    "from": "      this.calls.push(mono);\n",
+    "to": "\n"
+  },
+  {
+    "name": "gate not rechecked in the queue",
+    "file": "src/app.js",
+    "from": "const reason = this.blocked(mono, { test });",
+    "to": "const reason = null;"
+  },
+  {
+    "name": "secondary 403 always a refusal",
+    "file": "src/app.js",
+    "from": "if (elsewhere) {",
+    "to": "if (false) {"
+  },
+  {
+    "name": "secondary 403 never a refusal",
+    "file": "src/app.js",
+    "from": "        if (elsewhere) {",
+    "to": "        if (true) {"
+  },
+  {
+    "name": "Retry-After ignored",
+    "file": "src/app.js",
+    "from": "Math.max(ladder, err.retryAfterMs ?? 0)",
+    "to": "ladder"
+  },
+  {
+    "name": "pause ladder not doubled",
+    "file": "src/app.js",
+    "from": "PAUSE_MIN_MS * 2 ** this.pauseLevel",
+    "to": "PAUSE_MIN_MS"
+  },
+  {
+    "name": "pause not in the schedule",
+    "file": "src/app.js",
+    "from": "at = Math.max(at, this.pauseUntil, this.denied[job.kind]?.until ?? -Infinity);",
+    "to": "at = Math.max(at, this.denied[job.kind]?.until ?? -Infinity);"
+  },
+  {
+    "name": "denied wait ignored",
+    "file": "src/app.js",
+    "from": "at = Math.max(at, this.pauseUntil, this.denied[job.kind]?.until ?? -Infinity);",
+    "to": "at = Math.max(at, this.pauseUntil);"
+  },
+  {
+    "name": "interval ignored",
+    "file": "src/app.js",
+    "from": "last + Math.max(job.interval, this.retryAfter.get(job.key) ?? 0)",
+    "to": "last + (this.retryAfter.get(job.key) ?? 0)"
+  },
+  {
+    "name": "unknown stop retried at the interval",
+    "file": "src/app.js",
+    "from": "if (err.kind === 'notfound') this.retryAfter.set(job.key, UNKNOWN_STOP_RETRY_MS);",
+    "to": ""
+  },
+  {
+    "name": "attempt not saved before the call",
+    "file": "src/app.js",
+    "from": "    this.lastAttempt.set(job.key, mono);\n    this.retryAfter.delete(job.key);\n    this.save();\n",
+    "to": "    this.lastAttempt.set(job.key, mono);\n    this.retryAfter.delete(job.key);\n"
+  },
+  {
+    "name": "restored calls not counted",
+    "file": "src/app.js",
+    "from": "if (age !== undefined && age < HOUR) this.calls.push(mono - age);",
+    "to": ""
+  },
+  {
+    "name": "future /data date accepted",
+    "file": "src/app.js",
+    "from": "Number.isFinite(t) && t <= wall && wall - t",
+    "to": "Number.isFinite(t) && wall - t"
+  },
+  {
+    "name": "written over unreadable /data",
+    "file": "src/app.js",
+    "from": "    if (!this.loaded) return;\n    this.store.save",
+    "to": "    this.store.save"
+  },
+  {
+    "name": "/data not read again",
+    "file": "src/app.js",
+    "from": "if (!this.storeTimer && this.running) {",
+    "to": "if (false) {"
+  },
+  {
+    "name": "test button not throttled",
+    "file": "src/app.js",
+    "from": "if (mono - this.lastTest < TEST_MIN_GAP_MS) {",
+    "to": "if (false) {"
+  },
+  {
+    "name": "first alerts reading fires",
+    "file": "src/app.js",
+    "from": "if (this.persist.alertsSeeded) {",
+    "to": "if (true) {"
+  },
+  {
+    "name": "delay event fired twice",
+    "file": "src/app.js",
+    "from": "if (this.persist.fired[mark]) continue;",
+    "to": ""
+  },
+  {
+    "name": "state budget ignored",
+    "file": "src/app.js",
+    "from": "used + states.length > MAX_STATES_PER_MINUTE",
+    "to": "false"
+  },
+  {
+    "name": "refusal not persisted",
+    "file": "src/app.js",
+    "from": "this.persist.refused = { tag: tagOf(this.persist.salt, key) };",
+    "to": "this.persist.refused = null;"
+  },
+  {
+    "name": "body size not bounded",
+    "file": "src/api/client.js",
+    "from": "if (size > maxBytes) {",
+    "to": "if (false) {"
+  },
+  {
+    "name": "redirect followed",
+    "file": "src/api/client.js",
+    "from": "redirect: 'error',",
+    "to": "redirect: 'follow',"
+  },
+  {
+    "name": "envelope 403 not a refusal",
+    "file": "src/api/client.js",
+    "from": "if (status === 401 || status === 403) return 'auth';",
+    "to": "if (status === 401) return 'auth';"
+  },
+  {
+    "name": "countdown from host clock",
+    "file": "src/app.js",
+    "from": "await this.publish(stopStates(this.gladys, stop, board, server.at, this.config));",
+    "to": "await this.publish(stopStates(this.gladys, stop, board, this.now() + 7 * MINUTE, this.config));"
+  },
+  {
+    "name": "line filter ignored",
+    "file": "src/api/model.js",
+    "from": "if (lines.length > 0 && !lines.includes(line)) continue;",
+    "to": ""
+  },
+  {
+    "name": "delay invented without computed time",
+    "file": "src/api/model.js",
+    "from": "computed !== null && scheduled !== null\n          ? Math.round",
+    "to": "scheduled !== null\n          ? Math.round"
+  }
+]

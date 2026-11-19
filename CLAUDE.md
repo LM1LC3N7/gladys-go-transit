@@ -15,7 +15,7 @@ its only runtime dependency. It started from the official JavaScript template.
 
 ```bash
 npm install
-npm test                                  # node --test, the built-in runner
+npm test                                  # node --test --test-timeout=60000
 node --test test/devices.test.js          # one file
 node --test --test-name-pattern "plug"    # tests whose name matches
 npm run lint                              # ESLint
@@ -31,18 +31,23 @@ pushing.
 ## Architecture
 
 ```
-index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
-src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
-src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
-gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
-test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
-.github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
+index.js              SDK wiring only (src/handlers.js), shutdown
+src/handlers.js       the SDK handlers -> the app (shared with the tests)
+src/app.js            GoApp: timer, gate (key, pause, budget, /data), queue of one call,
+                      publication, scene events, status, buttons, widget
+src/api/client.js     one GET to api.openmetrolinx.com: envelope, size and time bounds
+src/api/model.js      parsing of NextService, ServiceAlert, Stop/All
+src/devices.js        stop and alerts devices, their states
+src/config.js         normalized configuration (DEFAULTS mirror the manifest)
+src/store.js          /data state file (missing = empty, unreadable = not empty)
+src/time.js           Toronto local times
+src/i18n.js           every user-facing text, en and fr
+scripts/mutants.mjs   mutation check of the guards (scripts/mutants.json)
+scripts/cover.mjs     generates cover.png
 ```
+
+Clocks are injected (`now` wall, `monotonic`, `timers`): decisions use the monotonic clock only;
+the wall clock is used to write /data and read it back.
 
 ## Rules
 

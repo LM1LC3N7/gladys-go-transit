@@ -1,177 +1,495 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "GO Transit",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "GO Transit (Toronto region): next departures, delays and service alerts.",
+    "fr": "GO Transit (région de Toronto) : prochains départs, retards et alertes de service."
   },
-  "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
-  "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "version": "0.1.0",
+  "docker_image": "ghcr.io/lm1lc3n7/gladys-go-transit:0.1.0",
+  "gladys_version": ">=5.3.0",
+  "countries": ["CA"],
+  "cover_image": "https://raw.githubusercontent.com/LM1LC3N7/gladys-go-transit/main/cover.png",
+  "categories": ["services"],
+  "transports": ["cloud"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Get started",
+        "fr": "Démarrer"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "1. Ask Metrolinx for a free GO API key (link below; it arrives by e-mail). Metrolinx handles requests by hand, up to ten business days. 2. Paste it here and type the codes of your stations (UN for Union Station; the “Find a stop” button at the bottom gives the others). 3. Save, then open the “Discover” tab and add your stations and the alerts device. Contains information licensed under the Open Government Licence – Ontario – Metrolinx. Not affiliated with Metrolinx. Never tested with a real key.",
+        "fr": "1. Demandez à Metrolinx une clé gratuite de l’API GO (lien ci-dessous ; elle arrive par e-mail). Metrolinx traite les demandes à la main, jusqu’à dix jours ouvrables. 2. Collez-la ici et saisissez les codes de vos gares (UN pour Union Station ; le bouton « Chercher une gare » en bas donne les autres). 3. Enregistrez, puis ouvrez l’onglet « Découverte » et ajoutez vos gares et l’appareil des alertes. Contient des informations sous licence Open Government Licence – Ontario – Metrolinx. Sans lien avec Metrolinx. Jamais testé avec une vraie clé."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://github.com/LM1LC3N7/gladys-go-transit/blob/main/docs/en.md",
+          "label": {
+            "en": "Step-by-step guide",
+            "fr": "Guide pas à pas"
+          }
+        },
+        {
+          "url": "https://api.openmetrolinx.com/OpenDataAPI/Help/Registration/en",
+          "label": {
+            "en": "Get a GO API key",
+            "fr": "Obtenir une clé de l’API GO"
+          }
+        },
+        {
+          "url": "https://assets.metrolinx.com/image/upload/v1663237565/Documents/Metrolinx/Open-Government-Licence-Ontario-Metrolinx.pdf",
+          "label": {
+            "en": "Open Government Licence – Ontario – Metrolinx",
+            "fr": "Licence (Open Government Licence – Ontario – Metrolinx)"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
-      },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
+      "key": "api_key",
+      "type": "secret",
       "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "label": {
+        "en": "GO API key",
+        "fr": "Clé de l’API GO"
+      },
+      "description": {
+        "en": "The access key Metrolinx sent you. Kept by Gladys in its database, never shown again, sent only to api.openmetrolinx.com. Metrolinx switches off a key that calls too much: the integration keeps under 450 calls an hour. If Metrolinx refuses the key, reads stop until you change it or click “Test the key”.",
+        "fr": "La clé d’accès envoyée par Metrolinx. Gardée par Gladys dans sa base, jamais réaffichée, envoyée seulement à api.openmetrolinx.com. Metrolinx désactive une clé qui appelle trop : l’intégration reste sous 450 appels par heure. Si Metrolinx refuse la clé, les lectures s’arrêtent jusqu’à ce que vous la changiez ou cliquiez sur « Tester la clé »."
+      }
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
-      },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
-    },
-    {
-      "key": "unit",
-      "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "key": "stops",
+      "type": "string",
       "required": false,
-      "default": "celsius",
-      "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
-      ]
+      "label": {
+        "en": "Stations and stops",
+        "fr": "Gares et arrêts"
+      },
+      "description": {
+        "en": "GO stop codes, comma-separated, 6 at most (each one costs a call per refresh). Optional line filter after @ (several joined by +) and name after : — e.g. “UN, OA@LW:Oakville to work”.",
+        "fr": "Codes de gares GO, séparés par des virgules, 6 au plus (chacune coûte un appel par rafraîchissement). Filtre de lignes facultatif après @ (plusieurs joints par +) et nom après : — ex. « UN, OA@LW:Oakville vers le travail »."
+      },
+      "placeholder": {
+        "en": "UN, OA@LW:Oakville to work",
+        "fr": "UN, OA@LW:Oakville vers le travail"
+      }
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
-      "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+      "key": "watch_alerts",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "label": {
+        "en": "Watch the service alerts",
+        "fr": "Suivre les alertes de service"
       },
+      "description": {
+        "en": "Proposes a “GO Transit – Service alerts” device: the number of current alerts and the latest one.",
+        "fr": "Propose un appareil « GO Transit – Alertes de service » : le nombre d’alertes en cours et la dernière."
+      }
+    },
+    {
+      "key": "alert_lines",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Lines of the alerts",
+        "fr": "Lignes des alertes"
+      },
+      "description": {
+        "en": "Only the alerts of these lines (codes, comma-separated). Empty: every alert of the network.",
+        "fr": "Seulement les alertes de ces lignes (codes, séparés par des virgules). Vide : toutes les alertes du réseau."
+      },
+      "placeholder": {
+        "en": "LW, LE",
+        "fr": "LW, LE"
+      }
+    },
+    {
+      "key": "advanced",
+      "type": "section",
+      "label": {
+        "en": "Advanced",
+        "fr": "Avancé"
+      },
+      "description": {
+        "en": "The defaults suit almost everyone and keep the key well under the limits of Metrolinx.",
+        "fr": "Les valeurs par défaut conviennent à presque tout le monde et gardent la clé bien sous les limites de Metrolinx."
+      }
+    },
+    {
+      "key": "departures_poll_frequency",
+      "type": "number",
+      "required": false,
+      "default": 60,
+      "min": 60,
+      "max": 3600,
+      "label": {
+        "en": "Departures refresh (s)",
+        "fr": "Rafraîchissement des départs (s)"
+      },
+      "description": {
+        "en": "Seconds between two reads of each station.",
+        "fr": "Secondes entre deux lectures de chaque gare."
+      }
+    },
+    {
+      "key": "alerts_poll_frequency",
+      "type": "number",
       "required": false,
       "default": 300,
-      "min": 60,
-      "max": 3600
+      "min": 120,
+      "max": 3600,
+      "label": {
+        "en": "Alerts refresh (s)",
+        "fr": "Rafraîchissement des alertes (s)"
+      },
+      "description": {
+        "en": "Seconds between two reads of the service alerts.",
+        "fr": "Secondes entre deux lectures des alertes de service."
+      }
+    },
+    {
+      "key": "max_departures",
+      "type": "number",
+      "required": false,
+      "default": 3,
+      "min": 1,
+      "max": 5,
+      "label": {
+        "en": "Departures per station",
+        "fr": "Départs par gare"
+      },
+      "description": {
+        "en": "How many upcoming departures each station device shows.",
+        "fr": "Nombre de prochains départs affichés par appareil de gare."
+      }
+    },
+    {
+      "key": "language",
+      "type": "select",
+      "required": false,
+      "default": "en",
+      "label": {
+        "en": "Language of the values",
+        "fr": "Langue des valeurs"
+      },
+      "description": {
+        "en": "Language of the feature names, the statuses and the alerts (Metrolinx writes them in both).",
+        "fr": "Langue des noms de fonctionnalités, des états et des alertes (Metrolinx les écrit dans les deux)."
+      },
+      "options": [
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français"
+          }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
+      "key": "test_key",
+      "label": {
+        "en": "Test the key",
+        "fr": "Tester la clé"
+      },
       "timeout_seconds": 30
     },
     {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
+      "key": "search_stops",
+      "label": {
+        "en": "Find a stop",
+        "fr": "Chercher une gare"
+      },
+      "timeout_seconds": 30,
       "fields": [
         {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
+          "key": "query",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Name or code",
+            "fr": "Nom ou code"
+          },
+          "placeholder": {
+            "en": "Oakville",
+            "fr": "Oakville"
+          }
         }
       ]
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "departure_delayed",
+      "label": {
+        "en": "GO departure delayed",
+        "fr": "Départ GO en retard"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "A departure of a watched station is late by at least the chosen minutes, or is cancelled. Once per departure and threshold.",
+        "fr": "Un départ d’une gare suivie a au moins le retard choisi, ou est annulé. Une fois par départ et par seuil."
       },
       "fields": [
         {
-          "key": "device",
+          "key": "stop",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
+          "required": true,
+          "label": {
+            "en": "Station",
+            "fr": "Gare"
+          }
         },
         {
-          "key": "target",
+          "key": "event",
           "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
+          "label": {
+            "en": "Events",
+            "fr": "Événements"
+          },
           "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
+            {
+              "value": "delayed",
+              "label": {
+                "en": "Delayed",
+                "fr": "En retard"
+              }
+            },
+            {
+              "value": "cancelled",
+              "label": {
+                "en": "Cancelled",
+                "fr": "Annulé"
+              }
+            }
           ]
+        },
+        {
+          "key": "threshold",
+          "type": "select",
+          "label": {
+            "en": "Delay of at least",
+            "fr": "Retard d’au moins"
+          },
+          "options": [
+            {
+              "value": "5",
+              "label": {
+                "en": "5 minutes",
+                "fr": "5 minutes"
+              }
+            },
+            {
+              "value": "10",
+              "label": {
+                "en": "10 minutes",
+                "fr": "10 minutes"
+              }
+            },
+            {
+              "value": "15",
+              "label": {
+                "en": "15 minutes",
+                "fr": "15 minutes"
+              }
+            },
+            {
+              "value": "30",
+              "label": {
+                "en": "30 minutes",
+                "fr": "30 minutes"
+              }
+            }
+          ]
+        },
+        {
+          "key": "line",
+          "type": "string",
+          "label": {
+            "en": "Line (empty: any)",
+            "fr": "Ligne (vide : toutes)"
+          },
+          "placeholder": {
+            "en": "LW",
+            "fr": "LW"
+          }
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "stop_name",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Station",
+            "fr": "Gare"
+          }
+        },
+        {
+          "key": "line",
+          "type": "string",
+          "label": {
+            "en": "Line",
+            "fr": "Ligne"
+          }
+        },
+        {
+          "key": "direction",
+          "type": "string",
+          "label": {
+            "en": "Direction",
+            "fr": "Direction"
+          }
+        },
+        {
+          "key": "trip",
+          "type": "string",
+          "label": {
+            "en": "Trip number",
+            "fr": "Numéro de trajet"
+          }
+        },
+        {
+          "key": "delay_minutes",
+          "type": "number",
+          "label": {
+            "en": "Delay (min)",
+            "fr": "Retard (min)"
+          }
+        },
+        {
+          "key": "minutes",
+          "type": "number",
+          "label": {
+            "en": "Minutes to wait",
+            "fr": "Minutes d’attente"
+          }
+        },
+        {
+          "key": "departure_time",
+          "type": "string",
+          "label": {
+            "en": "Expected time",
+            "fr": "Heure prévue"
+          }
+        },
+        {
+          "key": "scheduled_time",
+          "type": "string",
+          "label": {
+            "en": "Timetable time",
+            "fr": "Heure de l’horaire"
+          }
+        },
+        {
+          "key": "status",
+          "type": "string",
+          "label": {
+            "en": "Status",
+            "fr": "État"
+          }
         }
       ]
-    }
-  ],
-  "scene_actions": [
+    },
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "service_alert",
+      "label": {
+        "en": "New GO service alert",
+        "fr": "Nouvelle alerte GO"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Metrolinx posted a new service alert for a watched line (the lines of the alerts setting).",
+        "fr": "Metrolinx a publié une nouvelle alerte de service pour une ligne suivie (réglage des lignes des alertes)."
+      },
       "fields": [
         {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
+          "key": "line",
+          "type": "string",
+          "label": {
+            "en": "Line (empty: any)",
+            "fr": "Ligne (vide : toutes)"
+          },
+          "placeholder": {
+            "en": "LW",
+            "fr": "LW"
+          }
         }
       ],
-      "outputs": [
+      "variables": [
         {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "key": "subject",
+          "type": "string",
+          "label": {
+            "en": "Subject",
+            "fr": "Objet"
+          }
+        },
+        {
+          "key": "message",
+          "type": "string",
+          "label": {
+            "en": "Message",
+            "fr": "Message"
+          }
+        },
+        {
+          "key": "lines",
+          "type": "string",
+          "label": {
+            "en": "Lines",
+            "fr": "Lignes"
+          }
+        },
+        {
+          "key": "category",
+          "type": "string",
+          "label": {
+            "en": "Category",
+            "fr": "Catégorie"
+          }
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "departures",
+      "label": {
+        "en": "GO departures",
+        "fr": "Départs GO"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "The next departures of a watched station, with delays and platforms.",
+        "fr": "Les prochains départs d’une gare suivie, avec retards et voies."
+      },
+      "icon": "clock",
+      "settings": [
+        {
+          "key": "stop",
+          "type": "select",
+          "source": "devices",
+          "required": true,
+          "label": {
+            "en": "Station",
+            "fr": "Gare"
+          }
+        }
+      ]
     }
   ]
 }
