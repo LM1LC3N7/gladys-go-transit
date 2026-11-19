@@ -752,7 +752,8 @@ export class GoApp {
   }
 
   async handleAlerts(result, gen) {
-    this.answerTime(result);
+    // No 10-minute rule here: the TimeStamp of the alert list may be the time
+    // of its last edit (not verified), and there is no countdown to protect.
     const all = parseAlerts(result.data);
     const watched = watchedAlerts(all, this.config.alertLines);
     await this.publish(alertsStates(this.gladys, watched, this.config));

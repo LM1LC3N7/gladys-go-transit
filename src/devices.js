@@ -191,7 +191,10 @@ export function staleStates(gladys, stop, config) {
       state: NO_DEPARTURE_MINUTES,
     });
     states.push({ device_feature_external_id: ids.feature(featureKeys.line(n)), text: '' });
-    states.push({ device_feature_external_id: ids.feature(featureKeys.status(n)), text: '' });
+    states.push({
+      device_feature_external_id: ids.feature(featureKeys.status(n)),
+      text: LABELS[config.language].noReading,
+    });
   }
   states.push({
     device_feature_external_id: ids.feature(featureKeys.summary),

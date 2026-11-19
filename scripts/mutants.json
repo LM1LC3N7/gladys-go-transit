@@ -200,7 +200,7 @@
   {
     "name": "r1-I3 skew not measured",
     "file": "src/api/model.js",
-    "from": "Math.abs(stamp - reference) > MAX_SKEW_MS",
+    "from": "Math.abs(stamp - serverDate) > MAX_SKEW_MS",
     "to": "false"
   },
   {
@@ -334,5 +334,17 @@
     "file": "src/app.js",
     "from": "      if (sent >= 20 || gen !== this.gen) break;",
     "to": "      if (gen !== this.gen) break;"
+  },
+  {
+    "name": "r2 snapshot ahead not refused",
+    "file": "src/api/model.js",
+    "from": "Math.abs(stamp - serverDate) > MAX_SKEW_MS",
+    "to": "serverDate - stamp > MAX_SKEW_MS"
+  },
+  {
+    "name": "r2 cleared board republished",
+    "file": "src/app.js",
+    "from": "      board.cleared = true;\n",
+    "to": ""
   }
 ]

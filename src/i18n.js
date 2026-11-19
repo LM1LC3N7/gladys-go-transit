@@ -71,8 +71,8 @@ export const MESSAGES = {
     fr: `API GO indisponible ou saturée : appels en pause pendant ${minutes} min.`,
   }),
   staleData: {
-    en: ' The GO API served an out-of-date snapshot: not used.',
-    fr: ' L’API GO a servi un instantané périmé : non utilisé.',
+    en: ' The GO API served an out-of-date departure board: not used.',
+    fr: ' L’API GO a servi un tableau de départs périmé : non utilisé.',
   },
   budget: {
     en: 'Hourly call limit of the integration reached: the reads resume within the hour.',

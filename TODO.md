@@ -43,6 +43,9 @@
 
 ## Not verified
 
+- Whether `Metadata.TimeStamp` of `ServiceAlert/All` is the time of the answer or of the last edit:
+  the 10-minute rule is therefore applied to the departure boards only.
+
 - Never run against the real API with a key (registration is manual, up to ten business days):
   field values of `DepartureStatus`, `Status`, the platform fields, and the exact error code of a
   disabled key or of an unknown stop are taken from the documentation samples.

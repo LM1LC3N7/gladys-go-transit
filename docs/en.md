@@ -39,8 +39,8 @@ added are read: a station left in the Discovery screen costs nothing.
 
 For each station:
 
-- **Next departure**, **Departure 2**…: minutes to wait (999 when there is no departure at that
-  rank).
+- **Next departure**, **Departure 2**…: minutes to wait. 999 = no departure or no recent reading,
+  see the status text (empty, or `No recent reading`). A scene comparing the minutes should exclude 999.
 - **… line**: line and direction (`LW - Aldershot GO`).
 - **… status**: `On time`, `+5 min`, `2 min early`, `Cancelled`, or `Scheduled` when the API gives
   only the timetable time; then the platform when known (`Pl. 4`).
@@ -54,10 +54,12 @@ The **GO departures** dashboard widget shows the board of a station, counted dow
 reading.
 
 When a station has not been read for 15 minutes (or twice its refresh interval, when longer), its
-countdowns go to 999, its texts are emptied and **Next departures** says `No recent reading`; the
-widget shows nothing either. This also applies after a restart that cannot read (pause, refused
-key). An answer whose own time is more than 10 minutes away from the clock of the server (or of
-the host) is an old snapshot: neither published nor used for the scenes, and the status says so.
+countdowns go to 999, the line texts are emptied, and the status texts and **Next departures** say
+`No recent reading`; the widget shows nothing either. This also applies after a restart that cannot
+read (pause, refused key). A departure board whose own time is more than 10 minutes away from the
+`Date` header of the answer is an old snapshot: neither published nor used for the scenes, and the
+status says so. Without that header the board is used as it is (the clock of the Gladys host is not
+trusted for this). The alerts are not checked this way.
 
 ### Scenes
 

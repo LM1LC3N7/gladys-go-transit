@@ -26,10 +26,10 @@ const str = (value) => (typeof value === 'string' ? value : '');
 export function serverNowOf(data, serverDate, wallNow) {
   const stamp = parseTorontoTime(str(data?.Metadata?.TimeStamp));
   if (stamp !== null) {
-    // A snapshot far from the clock of the answer (the Date header, else the
-    // host) is an old one served again: neither published nor fired.
-    const reference = Number.isFinite(serverDate) ? serverDate : wallNow;
-    const stale = Number.isFinite(reference) && Math.abs(stamp - reference) > MAX_SKEW_MS;
+    // A snapshot far from the Date header of the answer is an old one served
+    // again: neither published nor fired. Without the header nothing is
+    // judged: a host clock set wrong must not stop every publication.
+    const stale = Number.isFinite(serverDate) && Math.abs(stamp - serverDate) > MAX_SKEW_MS;
     return { at: stamp, source: 'api', ...(stale ? { stale: true } : {}) };
   }
   if (Number.isFinite(serverDate)) return { at: serverDate, source: 'header' };

@@ -100,15 +100,22 @@ test('I3: an old snapshot is neither published nor fired', async (t) => {
   t.after(() => h.app.stop());
   await h.begin();
   assert.equal(h.fake.lastState(h.F('departure_1')), undefined);
-  assert.equal(h.fake.lastState(h.A('count')), undefined);
-  assert.equal(h.fake.sceneEvents.length, 0);
-  assert.match(h.fake.connectionStatus.message.en, /out-of-date snapshot/);
-  // Without a Date header, the host clock is the reference.
-  h.api.routes = (path, now) =>
-    new Response(JSON.stringify(board(old(now), [departure(old(now))])), { status: 200 });
+  assert.equal(h.fake.sceneEvents.filter((e) => e.key === 'departure_delayed').length, 0);
+  assert.match(h.fake.connectionStatus.message.en, /out-of-date departure board/);
+  // The alerts are not judged on their TimeStamp (maybe the time of the last edit).
+  assert.equal(h.fake.lastState(h.A('count')), 1);
+  // A snapshot ahead of the Date header by more than 10 min is refused too.
+  h.api.routes = (path, now) => board(now + HOUR, [departure(now + HOUR)]);
   await h.time.advance(MINUTE);
   assert.equal(h.fake.lastState(h.F('departure_1')), undefined);
-  // A fresh one is used again.
+  // Without a Date header nothing is judged: a host clock set wrong never blocks.
+  h.api.routes = (path, now) =>
+    new Response(JSON.stringify(board(old(now), [departure(old(now), { in: 7 })])), {
+      status: 200,
+    });
+  await h.time.advance(MINUTE);
+  assert.equal(h.fake.lastState(h.F('departure_1')), 7);
+  // A fresh one is used.
   h.api.routes = defaultRoutes;
   await h.time.advance(MINUTE);
   assert.equal(h.fake.lastState(h.F('departure_1')), 5);
@@ -126,6 +133,21 @@ test('I4: after the age limit without a reading, the countdowns go to 999', asyn
   assert.equal(h.fake.lastState(h.F('departure_1')), 999);
   assert.equal(h.fake.lastState(h.F('departure_1_line')), '');
   assert.equal(h.fake.lastState(h.F('summary')), 'No recent reading');
+  for (const n of [1, 2, 3]) {
+    assert.equal(h.fake.lastState(h.F(`departure_${n}_status`)), 'No recent reading');
+  }
+  // Blanked once: no timer left due at once (a loop), not published again.
+  for (const timer of h.time.pending.values())
+    assert.ok(timer.at > h.time.clock.now, 'no timer at 0');
+  let publications = 0;
+  const publish = h.gladys.publishChangedStates.bind(h.gladys);
+  h.gladys.publishChangedStates = (states) => {
+    publications += 1;
+    return publish(states);
+  };
+  await h.time.advance(2 * HOUR);
+  assert.equal(publications, 0);
+  h.gladys.publishChangedStates = publish;
   h.api.routes = defaultRoutes;
   await h.time.advance(6 * HOUR);
   assert.equal(h.fake.lastState(h.F('departure_1')), 5, 'a reading brings them back');

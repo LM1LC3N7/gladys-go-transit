@@ -41,8 +41,9 @@ appareils ajoutés sont lus : une gare laissée dans l’écran Découverte ne c
 
 Pour chaque gare :
 
-- **Prochain départ**, **Départ 2**… : minutes d’attente (999 quand il n’y a pas de départ à ce
-  rang).
+- **Prochain départ**, **Départ 2**… : minutes d’attente. 999 = aucun départ ou aucune lecture
+  récente, voir le texte d’état (vide, ou `Aucune lecture récente`). Une scène qui compare les
+  minutes doit exclure 999.
 - **Ligne du …** : ligne et direction (`LW - Aldershot GO`).
 - **État du …** : `À l'heure`, `+5 min`, `2 min d'avance`, `Annulé`, ou `Horaire prévu` quand l’API
   ne donne que l’heure de l’horaire ; puis la voie quand elle est connue (`Voie 4`).
@@ -56,11 +57,13 @@ Le widget **Départs GO** du tableau de bord montre le tableau d’une gare, dé
 dernière lecture.
 
 Quand une gare n’a pas été lue depuis 15 minutes (ou deux fois son intervalle de rafraîchissement,
-s’il est plus long), ses comptes à rebours passent à 999, ses textes sont vidés et **Prochains
-départs** indique `Aucune lecture récente` ; le widget n’affiche rien non plus. C’est aussi le cas
-après un redémarrage qui ne peut pas lire (pause, clé refusée). Une réponse dont l’heure propre
-s’écarte de plus de 10 minutes de l’horloge du serveur (ou de l’hôte) est un vieil instantané : ni
-publiée ni utilisée pour les scènes, et le statut le dit.
+s’il est plus long), ses comptes à rebours passent à 999, et **Prochains
+départs** comme les textes d’état indiquent `Aucune lecture récente` (les textes de ligne sont
+vidés) ; le widget n’affiche rien non plus. C’est aussi le cas après un redémarrage qui ne peut pas
+lire (pause, clé refusée). Un tableau de départs dont l’heure propre s’écarte de plus de 10 minutes
+de l’en-tête `Date` de la réponse est un vieil instantané : ni publié ni utilisé pour les scènes, et
+le statut le dit. Sans cet en-tête, le tableau est utilisé tel quel (l’horloge de l’hôte Gladys
+n’est pas prise comme référence). Les alertes ne sont pas contrôlées ainsi.
 
 ### Scènes
 
