@@ -58,7 +58,7 @@ test('reads at once, then once per interval; the states of a stop', async (t) =>
   assert.equal(h.api.calls[0].init.headers.Accept, 'application/json');
   assert.match(
     h.api.calls[0].init.headers['User-Agent'],
-    /^gladys-go-transit\/0\.1\.0 \(\+https:\/\/github\.com\/LM1LC3N7\/gladys-go-transit\)$/,
+    /^gladys-go-transit\/\d+\.\d+\.\d+ \(\+https:\/\/github\.com\/LM1LC3N7\/gladys-go-transit\)$/,
   );
   assert.equal(h.fake.lastState(h.F('departure_1')), 5);
   assert.equal(h.fake.lastState(h.F('departure_1_line')), 'LW - Aldershot GO');
